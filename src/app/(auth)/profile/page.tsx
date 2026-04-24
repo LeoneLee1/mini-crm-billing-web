@@ -1,12 +1,12 @@
 import AuthGuard from "@/features/auth/AuthGuard";
-import Dashboard from "@/features/Dashboard";
+import ProfileFeatures from "@/features/auth/Profile";
 import MainLayout from "@/layout/MainLayout";
 
-export default function Home() {
+export default function Profile() {
   return (
     <AuthGuard>
-      <MainLayout pageTitle="Dashboard">
-        <Dashboard />
+      <MainLayout pageTitle="Profile">
+        <ProfileFeatures />
       </MainLayout>
     </AuthGuard>
   );
