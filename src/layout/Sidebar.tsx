@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Package } from "lucide-react";
 import Image from "next/image";
 import { useAuthStore } from "@/store/authStore";
 
 const allNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { href: "/customers", label: "Customers", icon: Building2, adminOnly: false },
+  { href: "/products", label: "Products", icon: Package, adminOnly: false },
   { href: "/users", label: "Users", icon: Users, adminOnly: true },
 ];
 

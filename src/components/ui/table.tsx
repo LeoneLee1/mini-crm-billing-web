@@ -33,7 +33,7 @@ export function Table<T,>({
   data,
   keyExtractor,
   loading = false,
-  emptyText = "Tidak ada data.",
+  emptyText = "No data found.",
   emptyIcon,
   renderMobileItem,
 }: TableProps<T>) {
@@ -45,7 +45,7 @@ export function Table<T,>({
             className="w-8 h-8 border-3 border-gray-200 rounded-full animate-spin"
             style={{ borderTopColor: "#1d3494" }}
           />
-          <p className="text-sm text-gray-400">Memuat data...</p>
+          <p className="text-sm text-gray-400">Loading...</p>
         </div>
       </div>
     );

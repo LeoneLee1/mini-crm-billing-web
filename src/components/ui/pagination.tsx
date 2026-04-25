@@ -55,11 +55,11 @@ export function Pagination({ meta, onPageChange, className }: PaginationProps) {
     >
       {/* Info text */}
       <p className="text-sm text-gray-500 order-2 sm:order-1">
-        Menampilkan{" "}
+        Showing{" "}
         <span className="font-medium text-gray-700">{from}–{to}</span>
-        {" "}dari{" "}
+        {" "}of{" "}
         <span className="font-medium text-gray-700">{total}</span>
-        {" "}data
+        {" "}results
       </p>
 
       {/* Page buttons */}
@@ -68,7 +68,7 @@ export function Pagination({ meta, onPageChange, className }: PaginationProps) {
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
           className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Halaman sebelumnya"
+          aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -92,7 +92,7 @@ export function Pagination({ meta, onPageChange, className }: PaginationProps) {
                   : "text-gray-600 hover:bg-gray-100"
               )}
               style={p === page ? { backgroundColor: "#1d3494" } : {}}
-              aria-label={`Halaman ${p}`}
+              aria-label={`Page ${p}`}
               aria-current={p === page ? "page" : undefined}
             >
               {p}
@@ -104,7 +104,7 @@ export function Pagination({ meta, onPageChange, className }: PaginationProps) {
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPage}
           className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Halaman berikutnya"
+          aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
         </button>

@@ -76,7 +76,7 @@ export default function UserTable({ users, loading, onEdit, onDelete }: UserTabl
           <button onClick={() => onEdit(user)} className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit">
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={() => onDelete(user)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Hapus">
+          <button onClick={() => onDelete(user)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>

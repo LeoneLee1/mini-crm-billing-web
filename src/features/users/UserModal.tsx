@@ -42,16 +42,16 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
 
   function validate(): boolean {
     const e: Partial<FormState> = {};
-    if (!form.name.trim()) e.name = "Nama wajib diisi.";
+    if (!form.name.trim()) e.name = "Name is required.";
     if (!form.email.trim()) {
-      e.email = "Email wajib diisi.";
+      e.email = "Email is required.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      e.email = "Format email tidak valid.";
+      e.email = "Email format invalid.";
     }
     if (mode === "create" && !form.password) {
-      e.password = "Password wajib diisi.";
-    } else if (mode === "create" && form.password.length < 6) {
-      e.password = "Password minimal 6 karakter.";
+      e.password = "Password is required.";
+    } else if (mode === "create" && form.password.length < 8) {
+      e.password = "Password must be at least 8 characters.";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -70,7 +70,7 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
           role: form.role,
         };
         await createUser(payload);
-        Toast.fire({ icon: "success", title: "Berhasil!", text: "User berhasil dibuat." });
+        Toast.fire({ icon: "success", title: "Success!", text: "User successfully created." });
       } else if (user) {
         const payload: UpdateUserPayload = {
           name: form.name.trim(),
@@ -78,13 +78,13 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
           role: form.role,
         };
         await updateUser(user.id, payload);
-        Toast.fire({ icon: "success", title: "Berhasil!", text: "User berhasil diperbarui." });
+        Toast.fire({ icon: "success", title: "Success!", text: "User successfully updated." });
       }
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Terjadi kesalahan. Silakan coba lagi.";
-      Toast.fire({ icon: "error", title: "Gagal", text: msg });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Something went wrong. Try again.";
+      Toast.fire({ icon: "error", title: "Failed", text: msg });
     } finally {
       setSubmitting(false);
     }
@@ -101,7 +101,7 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md z-10 max-h-[92svh] flex flex-col">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">{mode === "create" ? "Tambah User" : "Edit User"}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{mode === "create" ? "Add User" : "Edit User"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -110,14 +110,14 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
         <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-5 space-y-4 overflow-y-auto">
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
-              Nama Lengkap <span className="text-red-500">*</span>
+              Full Name <span className="text-red-500">*</span>
             </label>
             <input
               name="name"
               type="text"
               value={form.name}
               onChange={handleChange}
-              placeholder="Masukkan nama lengkap"
+              placeholder="Enter full name"
               className={cn("w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400", errors.name ? "border-red-400 bg-red-50/30" : "border-gray-200 focus:border-blue-500 bg-white")}
             />
             {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
@@ -132,7 +132,7 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
               type="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="email@contoh.com"
+              placeholder="email@example.com"
               className={cn("w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400", errors.email ? "border-red-400 bg-red-50/30" : "border-gray-200 focus:border-blue-500 bg-white")}
             />
             {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
@@ -149,7 +149,7 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={handleChange}
-                  placeholder="Min. 6 karakter"
+                  placeholder="Min. 8 character"
                   className={cn(
                     "w-full px-3.5 py-2.5 pr-10 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400",
                     errors.password ? "border-red-400 bg-red-50/30" : "border-gray-200 focus:border-blue-500 bg-white",
@@ -180,7 +180,7 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
@@ -188,7 +188,7 @@ export default function UserModal({ mode, user, onClose, onSuccess }: UserModalP
               className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ backgroundColor: "#1d3494" }}
             >
-              {submitting ? "Menyimpan..." : mode === "create" ? "Buat User" : "Simpan"}
+              {submitting ? "Saving..." : mode === "create" ? "Create User" : "Save"}
             </button>
           </div>
         </form>

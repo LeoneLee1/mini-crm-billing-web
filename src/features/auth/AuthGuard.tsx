@@ -42,7 +42,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#1d3494" }} />
-          <p className="text-sm text-gray-400">Memverifikasi sesi...</p>
+          <p className="text-sm text-gray-400">Verifying session...</p>
         </div>
       </div>
     );

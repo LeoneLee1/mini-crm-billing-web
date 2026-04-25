@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ export default function LoginFeatures() {
       setAuth(access_token, refresh_token, user);
       router.replace("/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Login gagal. Periksa email dan password Anda.";
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Login failed. Please check your email and password.";
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -108,13 +107,6 @@ export default function LoginFeatures() {
               )}
             </Button>
           </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold hover:underline" style={{ color: "#1d3494" }}>
-              Create one
-            </Link>
-          </p>
         </div>
       </div>
     </div>
