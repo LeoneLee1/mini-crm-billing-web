@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
 import Image from "next/image";
+import { useAuthStore } from "@/store/authStore";
 
-const navItems = [{ href: "/", label: "Dashboard", icon: LayoutDashboard }];
+const allNavItems = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { href: "/users", label: "Users", icon: Users, adminOnly: true },
+];
 
 interface SidebarProps {
   open: boolean;
@@ -14,6 +18,8 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const navItems = allNavItems.filter((item) => !item.adminOnly || user?.role === "admin");
 
   return (
     <aside className={`fixed left-0 top-0 h-screen w-64 flex flex-col z-30 transition-transform duration-300 lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`} style={{ backgroundColor: "#1d3494" }}>
