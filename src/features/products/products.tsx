@@ -1,24 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Plus, Search, Package } from "lucide-react";
-import Swal from "sweetalert2";
 import { cn } from "@/lib/utils";
-import { getProducts, deleteProduct } from "@/services/products/productService";
-import { Product } from "@/services/products/productTypes";
-import { Pagination, PaginationMeta } from "@/components/ui/pagination";
+import { Pagination } from "@/components/ui/pagination";
 import ProductTable from "./ProductTable";
 import ProductModal from "./ProductModal";
-
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-});
-
-type ActiveFilter = "all" | "active" | "inactive";
+import { SelectField } from "@/components/ui/select-field";
+import { useListProducts, ActiveFilter } from "@/hooks/products/useListProducts";
+import { useCreateProducts } from "@/hooks/products/useCreateProducts";
+import { useUpdateProducts } from "@/hooks/products/useUpdateProducts";
+import { useDeleteProducts } from "@/hooks/products/useDeleteProducts";
 
 const ACTIVE_FILTERS: { label: string; value: ActiveFilter }[] = [
   { label: "All", value: "all" },
@@ -26,128 +17,27 @@ const ACTIVE_FILTERS: { label: string; value: ActiveFilter }[] = [
   { label: "Inactive", value: "inactive" },
 ];
 
-const LIMIT = 10;
-const DEFAULT_META: PaginationMeta = { page: 1, totalPage: 1, total: 0, limit: LIMIT };
-
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState<PaginationMeta>(DEFAULT_META);
+  const {
+    filteredProducts, loading, setPage, meta,
+    search, categoryFilter, activeFilter, uniqueCategories,
+    handleSearchChange, handleCategoryChange, handleActiveFilter, refresh,
+  } = useListProducts();
 
-  const [fetchedFor, setFetchedFor] = useState<{ page: number; key: number } | null>(null);
-  const loading = fetchedFor?.page !== page || fetchedFor?.key !== refreshKey;
+  const {
+    createModalOpen, openCreateModal, closeCreateModal,
+    form: createForm, errors: createErrors, submitting: createSubmitting,
+    handleChange: createHandleChange, handleCategoryChange: createHandleCategoryChange, handleSubmit: createHandleSubmit,
+  } = useCreateProducts(refresh);
 
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const {
+    editModalOpen, selectedProduct, openEditModal, closeEditModal,
+    form: editForm, errors: editErrors, submitting: editSubmitting,
+    handleChange: editHandleChange, handleCategoryChange: editHandleCategoryChange,
+    handleStatusChange: editHandleStatusChange, handleSubmit: editHandleSubmit,
+  } = useUpdateProducts(refresh);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    getProducts({ page, limit: LIMIT })
-      .then((res) => {
-        if (!active) return;
-        const data = res?.data;
-        const fetched: Product[] = Array.isArray(data?.products) ? data.products : [];
-
-        if (fetched.length === 0 && page > 1) {
-          setPage((p) => p - 1);
-          return;
-        }
-
-        setProducts(fetched);
-        setMeta({
-          page: data?.page ?? 1,
-          totalPage: data?.total_page ?? 1,
-          total: data?.total ?? 0,
-          limit: data?.limit ?? LIMIT,
-        });
-        setFetchedFor({ page, key: refreshKey });
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        const msg =
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Failed to load products.";
-        Toast.fire({ icon: "error", title: "Failed", text: msg });
-        setFetchedFor({ page, key: refreshKey });
-      });
-
-    return () => { active = false; };
-  }, [refreshKey, page]);
-
-  const uniqueCategories = [...new Set(products.map((p) => p.category).filter((c) => c?.trim()))];
-
-  const filteredProducts = products.filter((p) => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
-    const matchCategory = !categoryFilter || p.category === categoryFilter;
-    const matchActive =
-      activeFilter === "all" || (activeFilter === "active" ? p.is_active : !p.is_active);
-    return matchSearch && matchCategory && matchActive;
-  });
-
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearch(e.target.value);
-    setPage(1);
-  }
-
-  function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    setCategoryFilter(e.target.value);
-    setPage(1);
-  }
-
-  function handleActiveFilter(value: ActiveFilter) {
-    setActiveFilter(value);
-    setPage(1);
-  }
-
-  function openCreateModal() {
-    setModalMode("create");
-    setSelectedProduct(null);
-    setModalOpen(true);
-  }
-
-  function openEditModal(product: Product) {
-    setModalMode("edit");
-    setSelectedProduct(product);
-    setModalOpen(true);
-  }
-
-  function closeModal() {
-    setModalOpen(false);
-    setSelectedProduct(null);
-  }
-
-  async function handleDelete(product: Product) {
-    const result = await Swal.fire({
-      icon: "warning",
-      title: "Delete Product?",
-      text: `Product "${product.name}" will be deleted permanently.`,
-      showCancelButton: true,
-      confirmButtonText: "Yes, Delete",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
-    });
-    if (!result.isConfirmed) return;
-
-    try {
-      await deleteProduct(product.id);
-      Toast.fire({ icon: "success", title: "Success!", text: "Product deleted successfully." });
-      setRefreshKey((k) => k + 1);
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Something went wrong. Please try again.";
-      Toast.fire({ icon: "error", title: "Failed", text: msg });
-    }
-  }
+  const { handleDelete } = useDeleteProducts(refresh);
 
   return (
     <div className="space-y-6">
@@ -188,16 +78,15 @@ export default function Products() {
           />
         </div>
 
-        <select
+        <SelectField
           value={categoryFilter}
           onChange={handleCategoryChange}
-          className="w-full sm:w-auto px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 bg-white transition-colors cursor-pointer text-gray-600"
-        >
-          <option value="">All Categories</option>
-          {uniqueCategories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+          options={[
+            { label: "All Categories", value: "" },
+            ...uniqueCategories.map((cat) => ({ label: cat, value: cat })),
+          ]}
+          className="sm:w-auto"
+        />
 
         <div className="flex gap-2 flex-wrap">
           {ACTIVE_FILTERS.map(({ label, value }) => (
@@ -220,23 +109,36 @@ export default function Products() {
 
       {/* Table + Pagination */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <ProductTable
-          products={filteredProducts}
-          loading={loading}
-          onEdit={openEditModal}
-          onDelete={handleDelete}
-        />
+        <ProductTable products={filteredProducts} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
         <Pagination meta={meta} onPageChange={setPage} />
       </div>
 
-      {/* Modal */}
-      {modalOpen && (
+      {/* Modals */}
+      {createModalOpen && (
         <ProductModal
-          key={modalMode === "create" ? "create" : selectedProduct?.id}
-          mode={modalMode}
-          product={selectedProduct}
-          onClose={closeModal}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
+          key="create"
+          mode="create"
+          form={createForm}
+          errors={createErrors}
+          submitting={createSubmitting}
+          onClose={closeCreateModal}
+          handleChange={createHandleChange}
+          handleCategoryChange={createHandleCategoryChange}
+          handleSubmit={createHandleSubmit}
+        />
+      )}
+      {editModalOpen && selectedProduct && (
+        <ProductModal
+          key={selectedProduct.id}
+          mode="edit"
+          form={editForm}
+          errors={editErrors}
+          submitting={editSubmitting}
+          onClose={closeEditModal}
+          handleChange={editHandleChange}
+          handleCategoryChange={editHandleCategoryChange}
+          handleStatusChange={editHandleStatusChange}
+          handleSubmit={editHandleSubmit}
         />
       )}
     </div>

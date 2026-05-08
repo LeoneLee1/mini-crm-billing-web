@@ -1,24 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Plus, Search, Building2 } from "lucide-react";
-import Swal from "sweetalert2";
 import { cn } from "@/lib/utils";
-import { getCustomers, deleteCustomer } from "@/services/customers/customerService";
-import { Customer } from "@/services/customers/customerTypes";
-import { Pagination, PaginationMeta } from "@/components/ui/pagination";
+import { Pagination } from "@/components/ui/pagination";
 import CustomerTable from "./CustomerTable";
 import CustomerModal from "./CustomerModal";
-
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-});
-
-type StatusFilter = "all" | "active" | "inactive";
+import { useListCustomers, StatusFilter } from "@/hooks/customers/useListCustomers";
+import { useCreateCustomers } from "@/hooks/customers/useCreateCustomers";
+import { useUpdateCustomers } from "@/hooks/customers/useUpdateCustomers";
+import { useDeleteCustomers } from "@/hooks/customers/useDeleteCustomers";
 
 const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
   { label: "All", value: "all" },
@@ -26,115 +16,24 @@ const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
   { label: "Inactive", value: "inactive" },
 ];
 
-const LIMIT = 10;
-const DEFAULT_META: PaginationMeta = { page: 1, totalPage: 1, total: 0, limit: LIMIT };
-
 export default function Customers() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState<PaginationMeta>(DEFAULT_META);
+  const { filteredCustomers, loading, setPage, meta, searchName, statusFilter, handleSearchChange, handleStatusFilter, refresh } =
+    useListCustomers();
 
-  const [fetchedFor, setFetchedFor] = useState<{ page: number; key: number } | null>(null);
-  const loading = fetchedFor?.page !== page || fetchedFor?.key !== refreshKey;
+  const {
+    createModalOpen, openCreateModal, closeCreateModal,
+    form: createForm, errors: createErrors, submitting: createSubmitting,
+    handleChange: createHandleChange, handleSubmit: createHandleSubmit,
+  } = useCreateCustomers(refresh);
 
-  const [searchName, setSearchName] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const {
+    editModalOpen, openEditModal, closeEditModal,
+    form: editForm, errors: editErrors, submitting: editSubmitting,
+    handleChange: editHandleChange, handleSubmit: editHandleSubmit,
+    selectedCustomer,
+  } = useUpdateCustomers(refresh);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    getCustomers({ page, limit: LIMIT })
-      .then((res) => {
-        if (!active) return;
-        const data = res?.data;
-        const fetched: Customer[] = Array.isArray(data?.customers) ? data.customers : [];
-
-        if (fetched.length === 0 && page > 1) {
-          setPage((p) => p - 1);
-          return;
-        }
-
-        setCustomers(fetched);
-        setMeta({
-          page: data?.page ?? 1,
-          totalPage: data?.total_page ?? 1,
-          total: data?.total ?? 0,
-          limit: data?.limit ?? LIMIT,
-        });
-        setFetchedFor({ page, key: refreshKey });
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to load customers.";
-        Toast.fire({ icon: "error", title: "Failed", text: msg });
-        setFetchedFor({ page, key: refreshKey });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [refreshKey, page]);
-
-  const filteredCustomers = customers.filter((c) => {
-    const matchName = c.name.toLowerCase().includes(searchName.toLowerCase());
-    const matchStatus = statusFilter === "all" || c.status === statusFilter;
-    return matchName && matchStatus;
-  });
-
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearchName(e.target.value);
-    setPage(1);
-  }
-
-  function handleStatusFilter(value: StatusFilter) {
-    setStatusFilter(value);
-    setPage(1);
-  }
-
-  function openCreateModal() {
-    setModalMode("create");
-    setSelectedCustomer(null);
-    setModalOpen(true);
-  }
-
-  function openEditModal(customer: Customer) {
-    setModalMode("edit");
-    setSelectedCustomer(customer);
-    setModalOpen(true);
-  }
-
-  function closeModal() {
-    setModalOpen(false);
-    setSelectedCustomer(null);
-  }
-
-  async function handleDelete(customer: Customer) {
-    const result = await Swal.fire({
-      icon: "warning",
-      title: "Delete Customer?",
-      text: `Customer "${customer.name}" will be deleted permanently.`,
-      showCancelButton: true,
-      confirmButtonText: "Yes, Delete",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
-    });
-    if (!result.isConfirmed) return;
-
-    try {
-      await deleteCustomer(customer.id);
-      Toast.fire({ icon: "success", title: "Success!", text: "Customer successfully deleted." });
-      setRefreshKey((k) => k + 1);
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Something went wrong. Try again.";
-      Toast.fire({ icon: "error", title: "Failed", text: msg });
-    }
-  }
+  const { handleDelete } = useDeleteCustomers(refresh);
 
   return (
     <div className="space-y-6">
@@ -149,7 +48,11 @@ export default function Customers() {
             <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Manage customer data</p>
           </div>
         </div>
-        <button onClick={openCreateModal} className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0" style={{ backgroundColor: "#1d3494" }}>
+        <button
+          onClick={openCreateModal}
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+          style={{ backgroundColor: "#1d3494" }}
+        >
           <Plus className="w-4 h-4" />
           <span>Create new</span>
         </button>
@@ -172,7 +75,10 @@ export default function Customers() {
             <button
               key={value}
               onClick={() => handleStatusFilter(value)}
-              className={cn("px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all border", statusFilter === value ? "text-white border-transparent" : "text-gray-600 border-gray-200 bg-white hover:bg-gray-50")}
+              className={cn(
+                "px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all border",
+                statusFilter === value ? "text-white border-transparent" : "text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
+              )}
               style={statusFilter === value ? { backgroundColor: "#1d3494", borderColor: "#1d3494" } : {}}
             >
               {label}
@@ -187,8 +93,31 @@ export default function Customers() {
         <Pagination meta={meta} onPageChange={setPage} />
       </div>
 
-      {/* Modal */}
-      {modalOpen && <CustomerModal key={modalMode === "create" ? "create" : selectedCustomer?.id} mode={modalMode} customer={selectedCustomer} onClose={closeModal} onSuccess={() => setRefreshKey((k) => k + 1)} />}
+      {/* Modals */}
+      {createModalOpen && (
+        <CustomerModal
+          key="create"
+          mode="create"
+          form={createForm}
+          errors={createErrors}
+          submitting={createSubmitting}
+          onClose={closeCreateModal}
+          handleChange={createHandleChange}
+          handleSubmit={createHandleSubmit}
+        />
+      )}
+      {editModalOpen && selectedCustomer && (
+        <CustomerModal
+          key={selectedCustomer.id}
+          mode="edit"
+          form={editForm}
+          errors={editErrors}
+          submitting={editSubmitting}
+          onClose={closeEditModal}
+          handleChange={editHandleChange}
+          handleSubmit={editHandleSubmit}
+        />
+      )}
     </div>
   );
 }

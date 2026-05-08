@@ -1,22 +1,9 @@
 "use client";
 
 import { Pencil, Trash2, Building2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Table, TableColumn } from "@/components/ui/table";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Customer } from "@/services/customers/customerTypes";
-
-export function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap",
-        status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-      )}
-    >
-      {status === "active" ? "Active" : "Inactive"}
-    </span>
-  );
-}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("id-ID", {

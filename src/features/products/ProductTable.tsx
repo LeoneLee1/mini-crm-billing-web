@@ -1,25 +1,12 @@
 "use client";
 
 import { Pencil, Trash2, Package } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Table, TableColumn } from "@/components/ui/table";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Product } from "@/services/products/productTypes";
 
-function ActiveBadge({ active }: { active: boolean }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap",
-        active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-      )}
-    >
-      {active ? "Active" : "Inactive"}
-    </span>
-  );
-}
-
 function formatPrice(price: number) {
-  return `IDR ${Math.round(price).toLocaleString("en-US")}`;
+  return `IDR ${Math.round(price).toLocaleString("id-ID")}`;
 }
 
 function formatDate(dateStr: string) {
@@ -52,9 +39,7 @@ export default function ProductTable({ products, loading, onEdit, onDelete }: Pr
       render: (p) => (
         <div>
           <p className="font-medium text-gray-800">{p.name}</p>
-          {p.category && (
-            <p className="text-xs text-gray-400 mt-0.5">{p.category}</p>
-          )}
+          {p.category && <p className="text-xs text-gray-400 mt-0.5">{p.category}</p>}
         </div>
       ),
     },
@@ -79,7 +64,7 @@ export default function ProductTable({ products, loading, onEdit, onDelete }: Pr
     {
       key: "status",
       header: "Status",
-      render: (p) => <ActiveBadge active={p.is_active} />,
+      render: (p) => <StatusBadge status={p.is_active ? "active" : "inactive"} />,
     },
     {
       key: "created_at",
@@ -132,15 +117,13 @@ export default function ProductTable({ products, loading, onEdit, onDelete }: Pr
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold text-gray-800 text-sm truncate">{p.name}</span>
-              <ActiveBadge active={p.is_active} />
+              <StatusBadge status={p.is_active ? "active" : "inactive"} />
             </div>
             <p className="text-xs text-gray-600 mt-0.5">
               {formatPrice(p.price)}{" "}
               <span className="text-gray-400">/ {p.unit}</span>
             </p>
-            {p.category && (
-              <p className="text-xs text-gray-400">{p.category}</p>
-            )}
+            {p.category && <p className="text-xs text-gray-400">{p.category}</p>}
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
             <button

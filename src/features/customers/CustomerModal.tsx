@@ -1,105 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { X } from "lucide-react";
-import Swal from "sweetalert2";
 import { cn } from "@/lib/utils";
-import { createCustomer, updateCustomer } from "@/services/customers/customerService";
-import { Customer, CreateCustomerPayload, UpdateCustomerPayload } from "@/services/customers/customerTypes";
-
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-});
-
-interface FormState {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  status: "active" | "inactive";
-}
+import { CustomerFormState } from "@/hooks/customers/useCreateCustomers";
 
 interface CustomerModalProps {
   mode: "create" | "edit";
-  customer: Customer | null;
+  form: CustomerFormState;
+  errors: Partial<CustomerFormState>;
+  submitting: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  handleSubmit: (ev: React.SyntheticEvent<HTMLFormElement>) => void;
 }
 
-export default function CustomerModal({ mode, customer, onClose, onSuccess }: CustomerModalProps) {
-  const [form, setForm] = useState<FormState>({
-    name: customer?.name ?? "",
-    email: customer?.email ?? "",
-    phone: customer?.phone ?? "",
-    address: customer?.address ?? "",
-    status: customer?.status ?? "active",
-  });
-  const [errors, setErrors] = useState<Partial<FormState>>({});
-  const [submitting, setSubmitting] = useState(false);
-
-  function validate(): boolean {
-    const e: Partial<FormState> = {};
-    if (!form.name.trim()) e.name = "Name is required.";
-    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      e.email = "Invalid email format.";
-    }
-    if (!form.phone.trim()) {
-      e.phone = "Phone number is required.";
-    } else if (form.phone.replace(/\D/g, "").length < 10) {
-      e.phone = "Phone number must be at least 10 digits.";
-    }
-    if (!form.address.trim()) e.address = "Address is required.";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  async function handleSubmit(ev: React.FormEvent) {
-    ev.preventDefault();
-    if (!validate()) return;
-    setSubmitting(true);
-    try {
-      if (mode === "create") {
-        const payload: CreateCustomerPayload = {
-          name: form.name.trim(),
-          phone: form.phone.trim(),
-          address: form.address.trim(),
-          ...(form.email.trim() ? { email: form.email.trim() } : {}),
-        };
-        await createCustomer(payload);
-        Toast.fire({ icon: "success", title: "Success!", text: "Customer created successfully." });
-      } else if (customer) {
-        const payload: UpdateCustomerPayload = {
-          name: form.name.trim(),
-          phone: form.phone.trim(),
-          address: form.address.trim(),
-          status: form.status,
-          ...(form.email.trim() ? { email: form.email.trim() } : {}),
-        };
-        await updateCustomer(customer.id, payload);
-        Toast.fire({ icon: "success", title: "Success!", text: "Customer updated successfully." });
-      }
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Something went wrong. Please try again.";
-      Toast.fire({ icon: "error", title: "Failed", text: msg });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormState]) setErrors((prev) => ({ ...prev, [name]: undefined }));
-  }
-
+export default function CustomerModal({ mode, form, errors, submitting, onClose, handleChange, handleSubmit }: CustomerModalProps) {
   const inputBase = "w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400";
   const inputOk = "border-gray-200 focus:border-blue-500 bg-white";
   const inputErr = "border-red-400 bg-red-50/30";
@@ -119,7 +34,6 @@ export default function CustomerModal({ mode, customer, onClose, onSuccess }: Cu
         </div>
 
         <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-5 space-y-4 overflow-y-auto">
-          {/* Nama */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Full Name <span className="text-red-500">*</span>
@@ -132,7 +46,6 @@ export default function CustomerModal({ mode, customer, onClose, onSuccess }: Cu
             {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
           </div>
 
-          {/* Email (opsional) */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Email <span className="text-gray-400 font-normal text-xs">(optional)</span>
@@ -145,7 +58,6 @@ export default function CustomerModal({ mode, customer, onClose, onSuccess }: Cu
             {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
           </div>
 
-          {/* Telepon */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Phone Number <span className="text-red-500">*</span>
@@ -158,7 +70,6 @@ export default function CustomerModal({ mode, customer, onClose, onSuccess }: Cu
             {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
           </div>
 
-          {/* Alamat */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Address <span className="text-red-500">*</span>
@@ -171,7 +82,6 @@ export default function CustomerModal({ mode, customer, onClose, onSuccess }: Cu
             {errors.address && <p className="text-xs text-red-500">{errors.address}</p>}
           </div>
 
-          {/* Status — hanya di mode edit */}
           {mode === "edit" && (
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-gray-700">Status</label>

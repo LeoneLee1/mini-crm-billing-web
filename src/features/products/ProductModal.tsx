@@ -1,115 +1,39 @@
 "use client";
 
-import { useState } from "react";
 import { X } from "lucide-react";
-import Swal from "sweetalert2";
 import { cn } from "@/lib/utils";
-import { createProduct, updateProduct } from "@/services/products/productService";
-import { Product, CreateProductPayload, UpdateProductPayload } from "@/services/products/productTypes";
+import { SelectField } from "@/components/ui/select-field";
+import { ProductFormState } from "@/hooks/products/useCreateProducts";
 
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-});
+const CATEGORY_OPTIONS = [
+  { label: "Web Development", value: "Web Development" },
+  { label: "Mobile Development", value: "Mobile Development" },
+  { label: "Infrastructure", value: "Infrastructure" },
+  { label: "Digital Marketing", value: "Digital Marketing" },
+  { label: "Consultation", value: "Consultation" },
+  { label: "Maintenance", value: "Maintenance" },
+  { label: "Design", value: "Design" },
+  { label: "Other", value: "Other" },
+];
 
-interface FormState {
-  name: string;
-  description: string;
-  price: string;
-  unit: string;
-  category: string;
-  is_active: boolean;
-}
+const STATUS_OPTIONS = [
+  { label: "Active", value: "true" },
+  { label: "Inactive", value: "false" },
+];
 
 interface ProductModalProps {
   mode: "create" | "edit";
-  product: Product | null;
+  form: ProductFormState;
+  errors: Partial<Record<keyof ProductFormState, string>>;
+  submitting: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleCategoryChange: (value: string) => void;
+  handleStatusChange?: (value: string) => void;
+  handleSubmit: (ev: React.SyntheticEvent<HTMLFormElement>) => void;
 }
 
-export default function ProductModal({ mode, product, onClose, onSuccess }: ProductModalProps) {
-  const [form, setForm] = useState<FormState>({
-    name: product?.name ?? "",
-    description: product?.description ?? "",
-    price: product?.price ? String(product.price) : "",
-    unit: product?.unit ?? "",
-    category: product?.category ?? "",
-    is_active: product?.is_active ?? true,
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
-  const [submitting, setSubmitting] = useState(false);
-
-  function validate(): boolean {
-    const e: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) {
-      e.name = "Name is required.";
-    } else if (form.name.trim().length < 2) {
-      e.name = "Name must be at least 2 characters.";
-    }
-    const priceNum = Number(form.price);
-    if (!form.price || isNaN(priceNum) || priceNum <= 0) {
-      e.price = "Price is required and must be greater than 0.";
-    }
-    if (!form.unit.trim()) e.unit = "Unit is required.";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  async function handleSubmit(ev: React.FormEvent) {
-    ev.preventDefault();
-    if (!validate()) return;
-    setSubmitting(true);
-    try {
-      if (mode === "create") {
-        const payload: CreateProductPayload = {
-          name: form.name.trim(),
-          price: Number(form.price),
-          unit: form.unit.trim(),
-          ...(form.description.trim() ? { description: form.description.trim() } : {}),
-          ...(form.category.trim() ? { category: form.category.trim() } : {}),
-        };
-        await createProduct(payload);
-        Toast.fire({ icon: "success", title: "Success!", text: "Product created successfully." });
-      } else if (product) {
-        const payload: UpdateProductPayload = {
-          name: form.name.trim(),
-          price: Number(form.price),
-          unit: form.unit.trim(),
-          is_active: form.is_active,
-          ...(form.description.trim() ? { description: form.description.trim() } : {}),
-          ...(form.category.trim() ? { category: form.category.trim() } : {}),
-        };
-        await updateProduct(product.id, payload);
-        Toast.fire({ icon: "success", title: "Success!", text: "Product updated successfully." });
-      }
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Something went wrong. Please try again.";
-      Toast.fire({ icon: "error", title: "Failed", text: msg });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) {
-    const { name, value } = e.target;
-    if (name === "is_active") {
-      setForm((prev) => ({ ...prev, is_active: value === "true" }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    }
-    if (errors[name as keyof FormState]) setErrors((prev) => ({ ...prev, [name]: undefined }));
-  }
-
+export default function ProductModal({ mode, form, errors, submitting, onClose, handleChange, handleCategoryChange, handleStatusChange, handleSubmit }: ProductModalProps) {
   const inputBase = "w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400";
   const inputOk = "border-gray-200 focus:border-blue-500 bg-white";
   const inputErr = "border-red-400 bg-red-50/30";
@@ -129,7 +53,6 @@ export default function ProductModal({ mode, product, onClose, onSuccess }: Prod
         </div>
 
         <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-5 space-y-4 overflow-y-auto">
-          {/* Name */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Product Name <span className="text-red-500">*</span>
@@ -142,7 +65,6 @@ export default function ProductModal({ mode, product, onClose, onSuccess }: Prod
             {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
           </div>
 
-          {/* Description */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Description <span className="text-gray-400 font-normal text-xs">(optional)</span>
@@ -155,18 +77,35 @@ export default function ProductModal({ mode, product, onClose, onSuccess }: Prod
             />
           </div>
 
-          {/* Price + Unit — side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-gray-700">
                 Price <span className="text-red-500">*</span>
               </label>
-              <input
-                name="price" type="number" min="0.01" step="0.01"
-                value={form.price} onChange={handleChange}
-                placeholder="0"
-                className={cn(inputBase, errors.price ? inputErr : inputOk)}
-              />
+              <div
+                className={cn(
+                  "flex items-center rounded-lg border overflow-hidden transition-colors",
+                  errors.price
+                    ? "border-red-400 bg-red-50/30"
+                    : "border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15"
+                )}
+              >
+                <span className="px-3 py-2.5 text-xs font-semibold text-gray-400 bg-gray-50 border-r border-inherit whitespace-nowrap select-none">
+                  IDR
+                </span>
+                <input
+                  name="price"
+                  type="text"
+                  inputMode="numeric"
+                  value={form.price ? Number(form.price).toLocaleString("id-ID") : ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^\d]/g, "");
+                    handleChange({ target: { name: "price", value: raw } } as React.ChangeEvent<HTMLInputElement>);
+                  }}
+                  placeholder="1.000.000"
+                  className="flex-1 px-3.5 py-2.5 text-sm outline-none bg-transparent text-gray-700 placeholder:text-gray-400"
+                />
+              </div>
               {errors.price && <p className="text-xs text-red-500">{errors.price}</p>}
             </div>
             <div className="space-y-1.5">
@@ -182,29 +121,26 @@ export default function ProductModal({ mode, product, onClose, onSuccess }: Prod
             </div>
           </div>
 
-          {/* Category */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700">
               Category <span className="text-gray-400 font-normal text-xs">(optional)</span>
             </label>
-            <input
-              name="category" type="text" value={form.category} onChange={handleChange}
-              placeholder="e.g. Food, Beverage, Service"
-              className={cn(inputBase, inputOk)}
+            <SelectField
+              value={form.category}
+              onChange={handleCategoryChange}
+              options={[{ label: "Select category...", value: "" }, ...CATEGORY_OPTIONS]}
+              placeholder="Select category..."
             />
           </div>
 
-          {/* Status — edit only */}
-          {mode === "edit" && (
+          {mode === "edit" && handleStatusChange && (
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                name="is_active" value={form.is_active ? "true" : "false"} onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 bg-white transition-colors appearance-none cursor-pointer"
-              >
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
+              <SelectField
+                value={form.is_active ? "true" : "false"}
+                onChange={handleStatusChange}
+                options={STATUS_OPTIONS}
+              />
             </div>
           )}
 
