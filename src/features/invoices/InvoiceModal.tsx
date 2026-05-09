@@ -11,9 +11,9 @@ import { Invoice, InvoiceStatus } from "@/services/invoices/invoiceTypes";
 import { Toast } from "@/utils/sweet_alert_utils/Toast";
 
 const STATUS_OPTIONS = [
-  { label: "Unpaid",    value: "unpaid" },
-  { label: "Paid",      value: "paid" },
-  { label: "Overdue",   value: "overdue" },
+  { label: "Unpaid", value: "unpaid" },
+  { label: "Paid", value: "paid" },
+  { label: "Overdue", value: "overdue" },
   { label: "Cancelled", value: "cancelled" },
 ];
 
@@ -45,9 +45,7 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
 
     getTransactions({ page: 1, limit: 200, status: "confirmed" })
       .then((res) => {
-        const list: Transaction[] = Array.isArray(res?.data?.transactions)
-          ? res.data.transactions
-          : [];
+        const list: Transaction[] = Array.isArray(res?.data?.transaction) ? res.data.transaction : [];
         setTransactions(list);
       })
       .catch(() => {
@@ -75,7 +73,7 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
       if (mode === "create") {
         await createInvoice({
           transaction_id: transactionId,
-          due_date: new Date(dueDate).toISOString(),
+          due_date: dueDate,
           notes: notes.trim(),
         });
         Toast.fire({ icon: "success", title: "Success!", text: "Invoice created successfully." });
@@ -87,9 +85,7 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Something went wrong. Please try again.";
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Something went wrong. Please try again.";
       Toast.fire({ icon: "error", title: "Failed", text: msg });
     } finally {
       setSubmitting(false);
@@ -97,11 +93,11 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
   }
 
   const inputBase = "w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400";
-  const inputOk   = "border-gray-200 focus:border-blue-500 bg-white";
-  const inputErr  = "border-red-400 bg-red-50/30";
+  const inputOk = "border-gray-200 focus:border-blue-500 bg-white";
+  const inputErr = "border-red-400 bg-red-50/30";
 
   const transactionOptions = transactions.map((t) => ({
-    label: `${t.transaction_number} — ${t.customer_name}`,
+    label: `${t.transaction_number ?? t.id.slice(0, 8).toUpperCase()} — ${t.customer?.name ?? "—"}`,
     value: t.id,
   }));
 
@@ -111,30 +107,20 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md z-10 max-h-[94svh] flex flex-col">
-
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">
-            {mode === "create" ? "New Invoice" : `Update Status — ${invoice?.invoice_number}`}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
-          >
+          <h2 className="text-lg font-bold text-gray-900">{mode === "create" ? "New Invoice" : `Update Status — ${invoice?.invoice_number}`}</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {loadingData ? (
           <div className="flex items-center justify-center py-16">
-            <div
-              className="w-7 h-7 border-[3px] border-gray-200 rounded-full animate-spin"
-              style={{ borderTopColor: "#1d3494" }}
-            />
+            <div className="w-7 h-7 border-[3px] border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#1d3494" }} />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-5 space-y-5 overflow-y-auto">
-
             {mode === "create" && (
               <>
                 {/* Transaction */}
@@ -146,18 +132,18 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
                     value={transactionId}
                     onChange={(val) => {
                       setTransactionId(val);
-                      setErrors((p) => { const n = { ...p }; delete n.transactionId; return n; });
+                      setErrors((p) => {
+                        const n = { ...p };
+                        delete n.transactionId;
+                        return n;
+                      });
                     }}
                     options={transactionOptions}
                     placeholder="Select confirmed transaction..."
                     error={!!errors.transactionId}
                   />
-                  {errors.transactionId && (
-                    <p className="text-xs text-red-500">{errors.transactionId}</p>
-                  )}
-                  {transactions.length === 0 && (
-                    <p className="text-xs text-gray-400">No confirmed transactions available.</p>
-                  )}
+                  {errors.transactionId && <p className="text-xs text-red-500">{errors.transactionId}</p>}
+                  {transactions.length === 0 && <p className="text-xs text-gray-400">No confirmed transactions available.</p>}
                 </div>
 
                 {/* Transaction summary preview */}
@@ -165,7 +151,7 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
                   <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-1.5 text-sm">
                     <div className="flex justify-between text-gray-500">
                       <span>Customer</span>
-                      <span className="font-medium text-gray-700">{selectedTransaction.customer_name}</span>
+                      <span className="font-medium text-gray-700">{selectedTransaction.customer?.name ?? "—"}</span>
                     </div>
                     <div className="flex justify-between text-gray-500">
                       <span>Items</span>
@@ -173,7 +159,7 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
                     </div>
                     <div className="flex justify-between font-bold text-gray-900 pt-1.5 border-t border-gray-200">
                       <span>Total</span>
-                      <span>{formatAmount(selectedTransaction.total_amount)}</span>
+                      <span>{formatAmount(selectedTransaction.total)}</span>
                     </div>
                   </div>
                 )}
@@ -192,24 +178,15 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
                     }}
                     className={cn(inputBase, errors.dueDate ? inputErr : inputOk, "cursor-pointer")}
                   />
-                  {errors.dueDate && (
-                    <p className="text-xs text-red-500">{errors.dueDate}</p>
-                  )}
+                  {errors.dueDate && <p className="text-xs text-red-500">{errors.dueDate}</p>}
                 </div>
 
                 {/* Notes */}
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-gray-700">
-                    Notes{" "}
-                    <span className="text-gray-400 font-normal text-xs">(optional)</span>
+                    Notes <span className="text-gray-400 font-normal text-xs">(optional)</span>
                   </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Additional notes..."
-                    rows={3}
-                    className={cn(inputBase, "resize-none", inputOk)}
-                  />
+                  <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional notes..." rows={3} className={cn(inputBase, "resize-none", inputOk)} />
                 </div>
               </>
             )}
@@ -217,25 +194,16 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
             {mode === "edit" && (
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-gray-700">Status</label>
-                <SelectField
-                  value={status}
-                  onChange={(val) => setStatus(val as InvoiceStatus)}
-                  options={STATUS_OPTIONS}
-                />
+                <SelectField value={status} onChange={(val) => setStatus(val as InvoiceStatus)} options={STATUS_OPTIONS} />
                 <p className="text-xs text-gray-400">
-                  Current status:{" "}
-                  <span className="font-medium capitalize text-gray-600">{invoice?.status}</span>
+                  Current status: <span className="font-medium capitalize text-gray-600">{invoice?.status}</span>
                 </p>
               </div>
             )}
 
             {/* Footer */}
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-              >
+              <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
               <button
@@ -244,11 +212,7 @@ export default function InvoiceModal({ mode, invoice, onClose, onSuccess }: Invo
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ backgroundColor: "#1d3494" }}
               >
-                {submitting
-                  ? "Saving..."
-                  : mode === "create"
-                  ? "Create Invoice"
-                  : "Save Changes"}
+                {submitting ? "Saving..." : mode === "create" ? "Create Invoice" : "Save Changes"}
               </button>
             </div>
           </form>

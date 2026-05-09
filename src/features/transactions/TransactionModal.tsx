@@ -140,18 +140,15 @@ export default function TransactionModal({ mode, transaction, onClose, onSuccess
         });
         Toast.fire({ icon: "success", title: "Success!", text: "Transaction created successfully." });
       } else if (transaction) {
-        const calls: Promise<unknown>[] = [
-          updateTransaction(transaction.id, {
-            items: itemPayload,
-            discount: discountNum,
-            tax: taxNum,
-            notes: notes.trim() || undefined,
-          }),
-        ];
+        await updateTransaction(transaction.id, {
+          items: itemPayload,
+          discount: discountNum,
+          tax: taxNum,
+          notes: notes.trim() || undefined,
+        });
         if (status !== transaction.status) {
-          calls.push(updateTransactionStatus(transaction.id, { status }));
+          await updateTransactionStatus(transaction.id, { status });
         }
-        await Promise.all(calls);
         Toast.fire({ icon: "success", title: "Success!", text: "Transaction updated successfully." });
       }
       onSuccess();
