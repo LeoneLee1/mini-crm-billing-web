@@ -6,9 +6,9 @@ import { Table, TableColumn } from "@/components/ui/table";
 import { Transaction, TransactionStatus } from "@/services/transactions/transactionTypes";
 
 const STATUS_STYLES: Record<TransactionStatus, { bg: string; text: string; label: string }> = {
-  draft:     { bg: "bg-gray-100",   text: "text-gray-600",   label: "Draft" },
-  confirmed: { bg: "bg-green-100",  text: "text-green-700",  label: "Confirmed" },
-  cancelled: { bg: "bg-red-100",    text: "text-red-600",    label: "Cancelled" },
+  draft:     { bg: "bg-gray-100",  text: "text-gray-600",  label: "Draft" },
+  confirmed: { bg: "bg-green-100", text: "text-green-700", label: "Confirmed" },
+  cancelled: { bg: "bg-red-100",   text: "text-red-600",   label: "Cancelled" },
 };
 
 function StatusBadge({ status }: { status: TransactionStatus }) {
@@ -52,19 +52,21 @@ export default function TransactionTable({ transactions, loading, onEdit, onDele
       key: "transaction_number",
       header: "Invoice",
       render: (t) => (
-        <span className="font-mono text-xs font-semibold text-gray-700">{t.transaction_number}</span>
+        <span className="font-mono text-xs font-semibold text-gray-700">
+          {t.transaction_number ?? t.id.slice(0, 8).toUpperCase()}
+        </span>
       ),
     },
     {
-      key: "customer_name",
+      key: "customer",
       header: "Customer",
-      render: (t) => <span className="font-medium text-gray-800">{t.customer_name}</span>,
+      render: (t) => <span className="font-medium text-gray-800">{t.customer?.name}</span>,
     },
     {
-      key: "total_amount",
+      key: "total",
       header: "Total",
       cellClassName: "font-semibold text-gray-800 whitespace-nowrap",
-      render: (t) => formatAmount(t.total_amount),
+      render: (t) => formatAmount(t.total),
     },
     {
       key: "status",
@@ -124,15 +126,17 @@ export default function TransactionTable({ transactions, loading, onEdit, onDele
             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
             style={{ backgroundColor: "#4a6ee0" }}
           >
-            {t.customer_name.charAt(0).toUpperCase()}
+            {t.customer?.name?.charAt(0)?.toUpperCase() ?? "?"}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-gray-800 text-sm truncate">{t.customer_name}</span>
+              <span className="font-semibold text-gray-800 text-sm truncate">{t.customer?.name}</span>
               <StatusBadge status={t.status} />
             </div>
-            <p className="text-xs text-gray-500 mt-0.5 font-mono">{t.transaction_number}</p>
-            <p className="text-xs font-semibold text-gray-700 mt-0.5">{formatAmount(t.total_amount)}</p>
+            <p className="text-xs text-gray-500 mt-0.5 font-mono">
+              {t.transaction_number ?? t.id.slice(0, 8).toUpperCase()}
+            </p>
+            <p className="text-xs font-semibold text-gray-700 mt-0.5">{formatAmount(t.total)}</p>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
             <button

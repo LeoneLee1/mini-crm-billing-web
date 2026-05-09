@@ -49,9 +49,46 @@ const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: 
 9. Maks **250 baris per file** (toleransi 300) — jika lebih, pecah jadi beberapa file kecil
 10. **Semua teks UI wajib Bahasa Inggris** — label, placeholder, button, toast, error message, empty state, konfirmasi dialog, heading, tooltip — semua yang terlihat user harus English
 
+## Form Input & Select Standard — WAJIB konsisten di semua modal/form
+
+### Text input, textarea, date input
+
+Gunakan 3 variabel ini di setiap modal/form. **Jangan variasikan padding/border/radius.**
+
+```ts
+const inputBase = "w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-colors placeholder:text-gray-400";
+const inputOk   = "border-gray-200 focus:border-blue-500 bg-white";
+const inputErr  = "border-red-400 bg-red-50/30";
+
+// Input/textarea → cn(inputBase, errors.field ? inputErr : inputOk)
+// Date input     → cn(inputBase, errors.field ? inputErr : inputOk, "cursor-pointer")
+```
+
+### Dropdown/Select — WAJIB pakai `<SelectField>`
+
+**Jangan gunakan native `<select>`** untuk dropdown di modal/form/filter. Selalu pakai komponen:
+
+```ts
+import { SelectField } from "@/components/ui/select-field";
+
+// Penggunaan:
+<SelectField
+  value={value}
+  onChange={(val) => setValue(val)}
+  options={[{ label: "Label", value: "val" }]}
+  placeholder="Select..."   // opsional
+  error={!!errors.field}    // opsional, aktifkan border merah
+/>
+```
+
+- `onChange` menerima `(value: string)` langsung — bukan event
+- Referensi implementasi: `src/features/products/products.tsx`, `src/features/invoices/InvoiceModal.tsx`
+
 ## Larangan
 
 - ❌ `src/app/` hanya routing files; `/components/ui/` hanya UI primitif tanpa business logic
 - ❌ Header/Sidebar/Footer di `/features/` atau `/components/ui/`
 - ❌ Hardcode warna brand di className — gunakan CSS variables
 - ❌ File langsung di root `src/` — semua wajib masuk subfolder
+- ❌ Gunakan `px-3 py-2` pada input di modal/form — standar wajib `px-3.5 py-2.5`
+- ❌ Gunakan native `<select>` di modal/form/filter — wajib pakai `<SelectField>` dari `@/components/ui/select-field`

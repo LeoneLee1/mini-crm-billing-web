@@ -1,27 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Receipt, Plus } from "lucide-react";
+import { FileText, Search, Plus } from "lucide-react";
 import Swal from "sweetalert2";
 import { cn } from "@/lib/utils";
-import { deleteTransaction } from "@/services/transactions/transactionService";
-import { Transaction, TransactionStatus } from "@/services/transactions/transactionTypes";
+import { deleteInvoice } from "@/services/invoices/invoiceService";
+import { Invoice, InvoiceStatus } from "@/services/invoices/invoiceTypes";
 import { Pagination } from "@/components/ui/pagination";
 import { Toast } from "@/utils/sweet_alert_utils/Toast";
-import { useListTransactions, TransactionStatusFilter } from "@/hooks/transactions/useListTransactions";
-import TransactionTable from "./TransactionTable";
-import TransactionModal from "./TransactionModal";
+import { useListInvoices, InvoiceStatusFilter } from "@/hooks/invoices/useListInvoices";
+import InvoiceTable from "./InvoiceTable";
+import InvoiceModal from "./InvoiceModal";
 
-const STATUS_FILTERS: { label: string; value: TransactionStatusFilter }[] = [
+const STATUS_FILTERS: { label: string; value: InvoiceStatusFilter }[] = [
   { label: "All",       value: "all" },
-  { label: "Draft",     value: "draft" as TransactionStatus },
-  { label: "Confirmed", value: "confirmed" as TransactionStatus },
-  { label: "Cancelled", value: "cancelled" as TransactionStatus },
+  { label: "Unpaid",    value: "unpaid" as InvoiceStatus },
+  { label: "Paid",      value: "paid" as InvoiceStatus },
+  { label: "Overdue",   value: "overdue" as InvoiceStatus },
+  { label: "Cancelled", value: "cancelled" as InvoiceStatus },
 ];
 
-export default function Transactions() {
+export default function Invoices() {
   const {
-    filteredTransactions,
+    filteredInvoices,
     loading,
     setPage,
     meta,
@@ -30,34 +31,34 @@ export default function Transactions() {
     handleSearchChange,
     handleStatusFilter,
     refresh,
-  } = useListTransactions();
+  } = useListInvoices();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   function openCreateModal() {
     setModalMode("create");
-    setSelectedTransaction(null);
+    setSelectedInvoice(null);
     setModalOpen(true);
   }
 
-  function openEditModal(transaction: Transaction) {
+  function openEditModal(invoice: Invoice) {
     setModalMode("edit");
-    setSelectedTransaction(transaction);
+    setSelectedInvoice(invoice);
     setModalOpen(true);
   }
 
   function closeModal() {
     setModalOpen(false);
-    setSelectedTransaction(null);
+    setSelectedInvoice(null);
   }
 
-  async function handleDelete(transaction: Transaction) {
+  async function handleDelete(invoice: Invoice) {
     const result = await Swal.fire({
       icon: "warning",
-      title: "Delete Transaction?",
-      text: `Transaction "${transaction.transaction_number}" will be deleted permanently.`,
+      title: "Delete Invoice?",
+      text: `Invoice "${invoice.invoice_number}" will be deleted permanently.`,
       showCancelButton: true,
       confirmButtonText: "Yes, Delete",
       cancelButtonText: "Cancel",
@@ -67,8 +68,8 @@ export default function Transactions() {
     if (!result.isConfirmed) return;
 
     try {
-      await deleteTransaction(transaction.id);
-      Toast.fire({ icon: "success", title: "Success!", text: "Transaction deleted successfully." });
+      await deleteInvoice(invoice.id);
+      Toast.fire({ icon: "success", title: "Success!", text: "Invoice deleted successfully." });
       refresh();
     } catch (err: unknown) {
       const msg =
@@ -87,11 +88,13 @@ export default function Transactions() {
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ backgroundColor: "#1d3494" }}
           >
-            <Receipt className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
+            <FileText className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">Transaction History</h1>
-            <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">View and manage all transactions</p>
+            <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">Invoices</h1>
+            <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+              View and manage all invoices
+            </p>
           </div>
         </div>
         <button
@@ -100,7 +103,7 @@ export default function Transactions() {
           style={{ backgroundColor: "#1d3494" }}
         >
           <Plus className="w-4 h-4" />
-          <span>New Transaction</span>
+          <span>New Invoice</span>
         </button>
       </div>
 
@@ -128,7 +131,11 @@ export default function Transactions() {
                   ? "text-white border-transparent"
                   : "text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
               )}
-              style={statusFilter === value ? { backgroundColor: "#1d3494", borderColor: "#1d3494" } : {}}
+              style={
+                statusFilter === value
+                  ? { backgroundColor: "#1d3494", borderColor: "#1d3494" }
+                  : {}
+              }
             >
               {label}
             </button>
@@ -138,8 +145,8 @@ export default function Transactions() {
 
       {/* Table + Pagination */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <TransactionTable
-          transactions={filteredTransactions}
+        <InvoiceTable
+          invoices={filteredInvoices}
           loading={loading}
           onEdit={openEditModal}
           onDelete={handleDelete}
@@ -149,10 +156,10 @@ export default function Transactions() {
 
       {/* Modal */}
       {modalOpen && (
-        <TransactionModal
-          key={modalMode === "create" ? "create" : selectedTransaction?.id}
+        <InvoiceModal
+          key={modalMode === "create" ? "create" : selectedInvoice?.id}
           mode={modalMode}
-          transaction={selectedTransaction}
+          invoice={selectedInvoice}
           onClose={closeModal}
           onSuccess={refresh}
         />

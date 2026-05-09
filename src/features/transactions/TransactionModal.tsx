@@ -248,7 +248,7 @@ export default function TransactionModal({ mode, transaction, onClose, onSuccess
 
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[520px]">
+                  <table className="w-full text-sm min-w-130">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
                         <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
